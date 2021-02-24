@@ -25,7 +25,6 @@ int get_body_beginning(char* buffer, int rv)
         if(state == FINAL_STATE)
         {
             inside_header = 0;
-            printf("HEYYYY");
             return i;
         }
         switch(buffer[i])
@@ -147,9 +146,9 @@ char* change_website(int it, char *head_buffer, char *website)
         {
             strncpy(new_website, website, web_len);
             for(int i = 0; i < k; i++)
-                new_website[slash_ind + i] = head_buffer[it+slash_ind+i];
+                new_website[slash_ind + i] = head_buffer[it+i];
 
-            new_website[k] = '\0';
+            new_website[slash_ind+k] = '\0';
             return new_website;
         }
     }
@@ -186,8 +185,7 @@ int main(int argc, char* argv[])
     // if(sockfd == -1) printf("Sock_Error");
 
     struct sockaddr_in proxy;
-    memset(&proxy, 0, sizeof(struct sockaddr_in));
-    
+    memset(&proxy, 0, sizeof(struct sockaddr_in)); 
     proxy.sin_addr.s_addr = inet_addr(proxy_ip);
     proxy.sin_family = AF_INET;
     proxy.sin_port = htons(proxy_port);
@@ -218,7 +216,7 @@ int main(int argc, char* argv[])
 
         printf("Connecting...\n");
         if(connect(sockfd, (struct sockaddr *)&proxy, sizeof(struct sockaddr_in)) == -1)
-            printf("connect_error\n");
+            printf("connect_error0\n");
         else
             printf("Connected\n");
 
@@ -253,91 +251,98 @@ int main(int argc, char* argv[])
         printf("code = %d\n", code);
         close(sockfd);
         
-        if(code == 200) break;
+        if(code/10 != 30) break;
 
         if(code/10 == 30)
         {
             //Find Location Header
             int head_len = total;
             int i_start = 0;
-            for(int i = 0; i < head_len; i++)
+            for(int i = 0; i < head_len-1; i++)
             {
                 if(head_buffer[i] == '\r' && head_buffer[i+1] == '\n')
                 {
+                    if(head_buffer[i+2] == '\r' && head_buffer[i+3] == '\n')
+                    {
+                        printf("End of Head: Could Not Find Location Header!\n");
+                        printf("Error\n");
+                        break;
+                    }
                     //Check if line is "Location"
                     if(strncmp(head_buffer+i_start, "Location:", strlen("Location:")) == 0)
                     {
                         //In location line, from i_start(include) to i(exclude)
                         //website start is from i_start+10
-                        website = change_website(i_start+10, head_buffer, website);
-                        printf("Found\n");
+                        website = change_website(i_start+10, head_buffer, website); //Handle for relative paths
+                        printf("Found redirect\n");
                         break;
                     }
                     i_start = i+2;
                 }
             }
         }
-        break;
+        printf("Redirect website = %s\n", website);
     }
-    printf("%s\n", website);
-
-    //return 0;
-    int sockfd;
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if(sockfd == -1) printf("Sock_Error");
-
-    printf("Connecting...\n");
-    if(connect(sockfd, (struct sockaddr *)&proxy, sizeof(struct sockaddr_in)) == -1)
-        printf("connect_error\n");
-    else
-        printf("Connected\n");
-
-    memset(request, 0, MAX_BUFFER_SIZE);
-    sprintf(request, "GET http://%s HTTP/1.1\r\nProxy-Authorization: Basic %s\r\nConnection: close\r\n\r\n", website, auth_base64);
-    
-    size_t total = 0;
-    size_t req_len = strlen(request);
-    while(total != req_len)
-    {
-        size_t snd = send(sockfd, request, strlen(request), 0);
-        if(snd == -1) printf("send_Error\n");
-        total += snd;
-    }
-
-    FILE *fp = fopen(html_filename, "w");
-    inside_header = 1;
-    total = 0;
-
-    while(1)
-    {
-        size_t rv = recv(sockfd, buffer, MAX_BUFFER_SIZE, 0);
-        printf("rv = %ld\n", rv);
-        if(rv == -1){ printf("recv_error\n"); continue; }
-        if(rv == 0) break;
-
-        // Parsing to remove header
-        if(inside_header) 
-        {
-            int start = get_body_beginning(buffer, rv);
-            printf("state = %d\n", state);
-            printf("start = %d\n", start);
-            if(!inside_header)
-                fwrite((void*)(buffer+start), 1, rv-(size_t)start, fp);
-        }
-        else
-            fwrite((void*)buffer, 1, rv, fp);
-
-        fwrite((void*)buffer, 1, rv, stdout);
-        total += rv;
-    }
-
-    printf("Closing socket...");
-    fclose(fp);
-    close(sockfd);
 
     if(strncmp(website, "info.in2p3.fr", strlen("info.in2p3.fr")) == 0)
-    {  
-        //get image file
+    {
+
+        //get full html for info.in2p3.fr
+        //need to parse the HTML for the image URL
+        int sockfd;
+        sockfd = socket(AF_INET, SOCK_STREAM, 0);
+        if(sockfd == -1) printf("Sock_Error");
+
+        printf("Connecting...\n");
+        if(connect(sockfd, (struct sockaddr *)&proxy, sizeof(struct sockaddr_in)) == -1)
+            printf("connect_error\n");
+        else
+            printf("Connected\n");
+
+        memset(request, 0, MAX_BUFFER_SIZE);
+        sprintf(request, "GET http://%s HTTP/1.1\r\nProxy-Authorization: Basic %s\r\nConnection: close\r\n\r\n", website, auth_base64);
+        
+        size_t total = 0;
+        size_t req_len = strlen(request);
+        while(total != req_len)
+        {
+            size_t snd = send(sockfd, request, strlen(request), 0);
+            if(snd == -1) printf("send_Error\n");
+            total += snd;
+        }
+
+        FILE *fp = fopen(html_filename, "w");
+        inside_header = 1;
+        total = 0;
+
+        while(1)
+        {
+            size_t rv = recv(sockfd, buffer, MAX_BUFFER_SIZE, 0);
+            printf("rv = %ld\n", rv);
+            if(rv == -1){ printf("recv_error\n"); continue; }
+            if(rv == 0) break;
+
+            // Parsing to remove header
+            if(inside_header) 
+            {
+                int start = get_body_beginning(buffer, rv);
+                printf("state = %d\n", state);
+                printf("start = %d\n", start);
+                if(!inside_header)
+                    fwrite((void*)(buffer+start), 1, rv-(size_t)start, fp);
+            }
+            else
+                fwrite((void*)buffer, 1, rv, fp);
+
+            //fwrite((void*)buffer, 1, rv, stdout);
+            total += rv;
+        }
+
+        printf("Closing socket...");
+        fclose(fp);
+        close(sockfd);
+
+        //get image file for info.in2pr3.fr
         printf("Reopening closed socket\n");
 
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -351,7 +356,7 @@ int main(int argc, char* argv[])
         sprintf(request, "GET http://info.in2p3.fr/cc.gif HTTP/1.1\r\nProxy-Authorization: Basic %s\r\nConnection: close\r\n\r\n", auth_base64);
 
         total = 0;
-        size_t req_len = strlen(request);
+        req_len = strlen(request);
         while(total != req_len)
         {
             size_t snd = send(sockfd, request, strlen(request), 0);
@@ -359,9 +364,65 @@ int main(int argc, char* argv[])
             total += snd;
         }
 
-        FILE *fp = fopen(img_filename, "w");
+        fp = fopen(img_filename, "w");
         inside_header = 1;
         state = 0;
+
+        while(1)
+        {
+            size_t rv = recv(sockfd, buffer, MAX_BUFFER_SIZE, 0);
+            printf("rv = %ld\n", rv);
+            if(rv == -1){ printf("recv_error\n"); continue; }
+            if(rv == 0) break;
+
+            // Parsing to remove header
+            if(inside_header) 
+            {
+                int start = get_body_beginning(buffer, rv);
+                printf("state = %d\n", state);
+                printf("start = %d\n", start);
+                if(!inside_header)
+                    fwrite((void*)(buffer+start), 1, rv-(size_t)start, fp);
+            }
+            else
+                fwrite((void*)buffer, 1, rv, fp);
+
+            //fwrite((void*)buffer, 1, rv, stdout);
+            total += rv;
+        }
+
+        printf("Closing socket...");
+        fclose(fp);
+        close(sockfd);
+    }
+    //For other websites (IMG URL not required)
+    else
+    {
+        int sockfd;
+        sockfd = socket(AF_INET, SOCK_STREAM, 0);
+        if(sockfd == -1) printf("Sock_Error");
+
+        printf("Connecting...\n");
+        if(connect(sockfd, (struct sockaddr *)&proxy, sizeof(struct sockaddr_in)) == -1)
+            printf("connect_error\n");
+        else
+            printf("Connected\n");
+
+        memset(request, 0, MAX_BUFFER_SIZE);
+        sprintf(request, "GET http://%s HTTP/1.1\r\nProxy-Authorization: Basic %s\r\nConnection: close\r\n\r\n", website, auth_base64);
+        
+        size_t total = 0;
+        size_t req_len = strlen(request);
+        while(total != req_len)
+        {
+            size_t snd = send(sockfd, request, strlen(request), 0);
+            if(snd == -1) printf("send_Error\n");
+            total += snd;
+        }
+
+        FILE *fp = fopen(html_filename, "w");
+        inside_header = 1;
+        total = 0;
 
         while(1)
         {
