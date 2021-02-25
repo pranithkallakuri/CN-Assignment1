@@ -138,7 +138,7 @@ char* change_website(int it, char *head_buffer, char *website)
         {
             strncpy(new_website, website, web_len);
             strncat(new_website, head_buffer+it, k);
-            new_website[k] = '\0';
+            new_website[web_len+k] = '\0';
             return new_website;
 
         }
@@ -226,8 +226,8 @@ int main(int argc, char* argv[])
         size_t req_len = strlen(request);
         while(total != req_len)
         {
-            size_t snd = send(sockfd, request, strlen(request), 0);
-            if(snd == -1) printf("send_Error\n");
+            size_t snd = send(sockfd, request, req_len, 0);
+            if(snd == -1) { printf("send_Error\n"); continue;}
             total += snd;
         }
 
@@ -306,7 +306,7 @@ int main(int argc, char* argv[])
         size_t req_len = strlen(request);
         while(total != req_len)
         {
-            size_t snd = send(sockfd, request, strlen(request), 0);
+            size_t snd = send(sockfd, request, req_len, 0);
             if(snd == -1) printf("send_Error\n");
             total += snd;
         }
@@ -359,7 +359,7 @@ int main(int argc, char* argv[])
         req_len = strlen(request);
         while(total != req_len)
         {
-            size_t snd = send(sockfd, request, strlen(request), 0);
+            size_t snd = send(sockfd, request, req_len, 0);
             if(snd == -1){ printf("send_Error\n"); continue; }
             total += snd;
         }
@@ -415,7 +415,7 @@ int main(int argc, char* argv[])
         size_t req_len = strlen(request);
         while(total != req_len)
         {
-            size_t snd = send(sockfd, request, strlen(request), 0);
+            size_t snd = send(sockfd, request, req_len, 0);
             if(snd == -1) printf("send_Error\n");
             total += snd;
         }
