@@ -1,7 +1,7 @@
 /* f20180249@hyderabad.bits-pilani.ac.in Pranith S Kallakuri */
 
 /* Brief description of program...*/
-/* ... */
+/* This program connects to the proxy, and requests initially a HEAD and looks for redirects, if found it iteratively requests HEAD on found redirect which is found through parsing, until a 30x response code is not found. Then it does a GET request to the proxy and parses out the header and stores the html in a file given by the name provided in the command-line arguments. If the website is "info.in2p3.fr" it also provides the website logo with the name mentioned in the arguments*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -248,7 +248,7 @@ int main(int argc, char* argv[])
         fwrite(head_buffer, 1, total, stdout);
         strncpy(status_str, head_buffer+9, 3);
         code = atoi(status_str);
-        printf("code = %d\n", code);
+        //printf("response code = %d\n", code);
         close(sockfd);
         
         if(code/10 != 30) break;
@@ -274,14 +274,14 @@ int main(int argc, char* argv[])
                         //In location line, from i_start(include) to i(exclude)
                         //website start is from i_start+10
                         website = change_website(i_start+10, head_buffer, website); //Handle for relative paths
-                        printf("Found redirect\n");
+                        //printf("Found redirect\n");
                         break;
                     }
                     i_start = i+2;
                 }
             }
         }
-        printf("Redirect website = %s\n", website);
+        //printf("Redirect website = %s\n", website);
     }
 
     if(strncmp(website, "info.in2p3.fr", strlen("info.in2p3.fr")) == 0)
@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
         while(1)
         {
             size_t rv = recv(sockfd, buffer, MAX_BUFFER_SIZE, 0);
-            printf("rv = %ld\n", rv);
+            //printf("rv = %ld\n", rv);
             if(rv == -1){ printf("recv_error\n"); continue; }
             if(rv == 0) break;
 
@@ -326,8 +326,8 @@ int main(int argc, char* argv[])
             if(inside_header) 
             {
                 int start = get_body_beginning(buffer, rv);
-                printf("state = %d\n", state);
-                printf("start = %d\n", start);
+                // printf("state = %d\n", state);
+                // printf("start = %d\n", start);
                 if(!inside_header)
                     fwrite((void*)(buffer+start), 1, rv-(size_t)start, fp);
             }
@@ -371,7 +371,7 @@ int main(int argc, char* argv[])
         while(1)
         {
             size_t rv = recv(sockfd, buffer, MAX_BUFFER_SIZE, 0);
-            printf("rv = %ld\n", rv);
+            //printf("rv = %ld\n", rv);
             if(rv == -1){ printf("recv_error\n"); continue; }
             if(rv == 0) break;
 
@@ -379,8 +379,8 @@ int main(int argc, char* argv[])
             if(inside_header) 
             {
                 int start = get_body_beginning(buffer, rv);
-                printf("state = %d\n", state);
-                printf("start = %d\n", start);
+                // printf("state = %d\n", state);
+                // printf("start = %d\n", start);
                 if(!inside_header)
                     fwrite((void*)(buffer+start), 1, rv-(size_t)start, fp);
             }
@@ -427,7 +427,7 @@ int main(int argc, char* argv[])
         while(1)
         {
             size_t rv = recv(sockfd, buffer, MAX_BUFFER_SIZE, 0);
-            printf("rv = %ld\n", rv);
+            //printf("rv = %ld\n", rv);
             if(rv == -1){ printf("recv_error\n"); continue; }
             if(rv == 0) break;
 
@@ -435,8 +435,8 @@ int main(int argc, char* argv[])
             if(inside_header) 
             {
                 int start = get_body_beginning(buffer, rv);
-                printf("state = %d\n", state);
-                printf("start = %d\n", start);
+                // printf("state = %d\n", state);
+                // printf("start = %d\n", start);
                 if(!inside_header)
                     fwrite((void*)(buffer+start), 1, rv-(size_t)start, fp);
             }
