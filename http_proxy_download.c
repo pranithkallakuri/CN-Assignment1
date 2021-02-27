@@ -156,7 +156,7 @@ char* change_website(int it, char *head_buffer, char *website)
 }
 
 //http://bits-judge-server.herokuapp.com/redirect
-//info.in2p3.fr
+//info.in2p3.fr/
 
 int main(int argc, char* argv[])
 {
