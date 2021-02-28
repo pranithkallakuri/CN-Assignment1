@@ -51,31 +51,26 @@ int get_body_beginning(char* buffer, int rv)
 
 char* encode_to_base64(char *input_str) 
 { 
+    char *list_of_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     int inp_len = strlen(input_str); 
     char* retstr = (char*)calloc(1000, sizeof(char)); 
     int shamt;
     int padding = 0;
     int k = 0; 
-
-    char *list_of_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-      
     for (int i = 0; i < inp_len; i += 3) 
     { 
         int nbits = 0;
         int value = 0;
         int cnt = 0; 
-
         for (int j = i; j < inp_len && j < i + 3; j++) 
         { 
             value = value << 8;  
             value |= input_str[j];  
             cnt++; 
-        } 
-
+        }
         nbits = cnt * 8;  
         padding = nbits % 3;
         int ind;  
-
         while (nbits != 0)  
         { 
             if (nbits > 5) 
@@ -93,7 +88,6 @@ char* encode_to_base64(char *input_str)
             retstr[k++] = list_of_chars[ind]; 
         } 
     } 
-    
     for (int i = 1; i < padding+1; i++)  
         retstr[k++] = '='; 
     retstr[k] = '\0'; 
@@ -156,7 +150,7 @@ char* change_website(int it, char *head_buffer, char *website)
 }
 
 //http://bits-judge-server.herokuapp.com/redirect
-//info.in2p3.fr/
+//info.in2p3.fr
 
 int main(int argc, char* argv[])
 {
@@ -313,6 +307,7 @@ int main(int argc, char* argv[])
 
         FILE *fp = fopen(html_filename, "w");
         inside_header = 1;
+        state = 0;
         total = 0;
 
         while(1)
@@ -366,6 +361,7 @@ int main(int argc, char* argv[])
 
         fp = fopen(img_filename, "w");
         inside_header = 1;
+        total = 0;
         state = 0;
 
         while(1)
@@ -422,6 +418,7 @@ int main(int argc, char* argv[])
 
         FILE *fp = fopen(html_filename, "w");
         inside_header = 1;
+        state = 0;
         total = 0;
 
         while(1)
